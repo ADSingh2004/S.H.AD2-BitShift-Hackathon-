@@ -1,0 +1,2075 @@
+import React, { useState } from 'react';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Dimensions,
+} from 'react-native';
+import { Card, Button, Avatar } from 'react-native-paper';
+
+type Page = 'onboarding' | 'home' | 'coach' | 'progress' | 'community' | 'profile';
+type OnboardingStep = 1 | 2 | 3 | 4;
+
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
+}
+
+const { width } = Dimensions.get('window');
+
+export default function App(): JSX.Element {
+  const [currentPage, setCurrentPage] = useState<Page>('onboarding');
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(1);
+  
+  // User profile data
+  const [userName, setUserName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | ''>('');
+  const [fitnessGoal, setFitnessGoal] = useState<'lose' | 'build' | 'active' | ''>('');
+  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'advanced' | ''>('');
+  const [daysPerWeek, setDaysPerWeek] = useState('');
+  const [minutesPerSession, setMinutesPerSession] = useState('');
+
+  // Chat messages
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      text: 'Hi! I\'m FitGenie, your AI fitness coach. Ask me anything about workouts, nutrition, or wellness!',
+      sender: 'ai',
+      timestamp: new Date(),
+    },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: chatInput,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    // Mock AI responses
+    const aiResponses: { [key: string]: string } = {
+      broccoli: 'Try spinach, asparagus, or green beans — they\'re nutrient-dense alternatives! All are rich in vitamins and minerals.',
+      protein: 'Great protein sources include chicken breast, salmon, eggs, Greek yogurt, tofu, and legumes. Aim for 0.8-1g per pound of body weight.',
+      workout: 'For beginners, I recommend starting with 3 days/week: Day 1 - Upper body, Day 2 - Lower body, Day 3 - Full body cardio.',
+      default: 'That\'s a great question! Based on verified fitness research, I recommend consulting with the personalized plan I\'ve created for you. Would you like me to adjust anything?',
+    };
+
+    const keyword = chatInput.toLowerCase();
+    let aiText = aiResponses.default;
+    if (keyword.includes('broccoli') || keyword.includes('substitute')) aiText = aiResponses.broccoli;
+    else if (keyword.includes('protein')) aiText = aiResponses.protein;
+    else if (keyword.includes('workout') || keyword.includes('exercise')) aiText = aiResponses.workout;
+
+    const aiMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: aiText,
+      sender: 'ai',
+      timestamp: new Date(),
+    };
+
+    setMessages([...messages, userMessage, aiMessage]);
+    setChatInput('');
+  };
+
+  const handleOnboardingNext = () => {
+    if (onboardingStep < 4) {
+      setOnboardingStep((onboardingStep + 1) as OnboardingStep);
+    } else {
+      setCurrentPage('home');
+    }
+  };
+
+  const renderOnboardingScreen = () => (
+    <View style={styles.container}>
+      <View style={styles.onboardingHeader}>
+        <Text style={styles.appTitle}>FitnessFREAK</Text>
+        <Text style={styles.onboardingSubtitle}>Your AI Fitness Companion</Text>
+        <View style={styles.progressBar}>
+          {[1, 2, 3, 4].map((step) => (
+            <View
+              key={step}
+              style={[
+                styles.progressDot,
+                step <= onboardingStep && styles.progressDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+
+      <ScrollView style={styles.onboardingContent}>
+        {/* Step 1: Basic Info */}
+        {onboardingStep === 1 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>Let's Get Started!</Text>
+            <Text style={styles.stepDescription}>Tell us about yourself</Text>
+            
+            {/* TODO: Add LottieView here */}
+            {/* Find 'welcome fitness animation' on LottieFiles.com */}
+            <View style={styles.illustrationPlaceholder}>
+              <Text style={styles.placeholderText}>🏃‍♂️ Animation</Text>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Your Name"
+              placeholderTextColor="#95a5a6"
+              value={userName}
+              onChangeText={setUserName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Age"
+              placeholderTextColor="#95a5a6"
+              keyboardType="numeric"
+              value={age}
+              onChangeText={setAge}
+            />
+            
+            <View style={styles.genderContainer}>
+              {(['Male', 'Female', 'Other'] as const).map((g) => (
+                <Pressable
+                  key={g}
+                  style={[
+                    styles.optionButton,
+                    gender === g && styles.optionButtonActive,
+                  ]}
+                  onPress={() => setGender(g)}
+                >
+                  <Text
+                    style={[
+                      styles.optionButtonText,
+                      gender === g && styles.optionButtonTextActive,
+                    ]}
+                  >
+                    {g}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Step 2: Fitness Goal */}
+        {onboardingStep === 2 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>What's Your Goal?</Text>
+            <Text style={styles.stepDescription}>Choose your primary fitness objective</Text>
+
+            {/* TODO: Add LottieView here */}
+            {/* Find 'fitness goal animation' on LottieFiles.com */}
+            <View style={styles.illustrationPlaceholder}>
+              <Text style={styles.placeholderText}>🎯 Animation</Text>
+            </View>
+
+            <Pressable
+              style={[
+                styles.goalCard,
+                fitnessGoal === 'lose' && styles.goalCardActive,
+              ]}
+              onPress={() => setFitnessGoal('lose')}
+            >
+              <Text style={styles.goalCardTitle}>Lose Weight</Text>
+              <Text style={styles.goalCardDesc}>Shed pounds and get lean</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.goalCard,
+                fitnessGoal === 'build' && styles.goalCardActive,
+              ]}
+              onPress={() => setFitnessGoal('build')}
+            >
+              <Text style={styles.goalCardTitle}>Build Muscle</Text>
+              <Text style={styles.goalCardDesc}>Gain strength and mass</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.goalCard,
+                fitnessGoal === 'active' && styles.goalCardActive,
+              ]}
+              onPress={() => setFitnessGoal('active')}
+            >
+              <Text style={styles.goalCardTitle}>Stay Active</Text>
+              <Text style={styles.goalCardDesc}>Maintain healthy lifestyle</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Step 3: Fitness Level */}
+        {onboardingStep === 3 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>Your Fitness Level</Text>
+            <Text style={styles.stepDescription}>Be honest - we'll tailor your plan</Text>
+
+            {/* TODO: Add LottieView here */}
+            {/* Find 'fitness level animation' on LottieFiles.com */}
+            <View style={styles.illustrationPlaceholder}>
+              <Text style={styles.placeholderText}>📊 Animation</Text>
+            </View>
+
+            {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
+              <Pressable
+                key={level}
+                style={[
+                  styles.levelCard,
+                  fitnessLevel === level && styles.levelCardActive,
+                ]}
+                onPress={() => setFitnessLevel(level)}
+              >
+                <Text style={styles.levelCardTitle}>
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* Step 4: Availability */}
+        {onboardingStep === 4 && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>Your Availability</Text>
+            <Text style={styles.stepDescription}>How much time can you commit?</Text>
+
+            {/* TODO: Add LottieView here */}
+            {/* Find 'calendar animation' on LottieFiles.com */}
+            <View style={styles.illustrationPlaceholder}>
+              <Text style={styles.placeholderText}>📅 Animation</Text>
+            </View>
+
+            <Text style={styles.inputLabel}>Days per week</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 3-5"
+              placeholderTextColor="#95a5a6"
+              keyboardType="numeric"
+              value={daysPerWeek}
+              onChangeText={setDaysPerWeek}
+            />
+
+            <Text style={styles.inputLabel}>Minutes per session</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 30-60"
+              placeholderTextColor="#95a5a6"
+              keyboardType="numeric"
+              value={minutesPerSession}
+              onChangeText={setMinutesPerSession}
+            />
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.onboardingFooter}>
+        <Button
+          mode="contained"
+          onPress={handleOnboardingNext}
+          style={styles.nextButton}
+          labelStyle={styles.nextButtonLabel}
+        >
+          {onboardingStep === 4 ? 'Finish' : 'Next'}
+        </Button>
+      </View>
+    </View>
+  );
+
+  const renderHomeScreen = () => (
+    <ScrollView style={styles.container}>
+      <View style={styles.homeHeader}>
+        <Text style={styles.greeting}>Good Morning, {userName || 'Champion'}!</Text>
+        <Text style={styles.motivationQuote}>
+          "The only bad workout is the one that didn't happen."
+        </Text>
+      </View>
+
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>8,542</Text>
+          <Text style={styles.statLabel}>Steps</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>520</Text>
+          <Text style={styles.statLabel}>Calories</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>7</Text>
+          <Text style={styles.statLabel}>Day Streak</Text>
+        </View>
+      </View>
+
+      <Card style={styles.workoutCard}>
+        <Card.Content>
+          <Text style={styles.cardTitle}>Today's Workout Plan</Text>
+          <Text style={styles.cardDescription}>
+            Upper Body Strength • 45 min • 8 exercises
+          </Text>
+          <Button
+            mode="contained"
+            style={styles.startButton}
+            labelStyle={styles.startButtonLabel}
+            onPress={() => {}}
+          >
+            Start Workout
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.nutritionCard}>
+        <Card.Content>
+          <Text style={styles.cardTitle}>Nutrition Summary</Text>
+          <View style={styles.nutritionGrid}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>1,850</Text>
+              <Text style={styles.nutritionLabel}>Calories</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>120g</Text>
+              <Text style={styles.nutritionLabel}>Protein</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>8/8</Text>
+              <Text style={styles.nutritionLabel}>Water</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <View style={styles.badgesContainer}>
+        <Text style={styles.sectionTitle}>Recent Badges</Text>
+        <View style={styles.badgesRow}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeEmoji}>🔥</Text>
+            <Text style={styles.badgeText}>Streak</Text>
+          </View>
+          <View style={styles.badge}>
+            <Text style={styles.badgeEmoji}>👑</Text>
+            <Text style={styles.badgeText}>Consistency</Text>
+          </View>
+          <View style={styles.badge}>
+            <Text style={styles.badgeEmoji}>💧</Text>
+            <Text style={styles.badgeText}>Hydration</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const renderCoachScreen = () => (
+    <View style={styles.coachContainer}>
+      <View style={styles.coachHeader}>
+        <Avatar.Icon size={48} icon="robot" style={styles.coachAvatar} />
+        <View>
+          <Text style={styles.coachTitle}>FitGenie AI Coach</Text>
+          <Text style={styles.coachSubtitle}>Powered by AI + RAG</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.chatContainer}>
+        {messages.map((message) => (
+          <View
+            key={message.id}
+            style={[
+              styles.messageContainer,
+              message.sender === 'user' ? styles.userMessage : styles.aiMessage,
+            ]}
+          >
+            {message.sender === 'ai' && (
+              <Avatar.Icon size={32} icon="robot" style={styles.messageAvatar} />
+            )}
+            <View
+              style={[
+                styles.messageBubble,
+                message.sender === 'user'
+                  ? styles.userMessageBubble
+                  : styles.aiMessageBubble,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  message.sender === 'user' && styles.userMessageText,
+                ]}
+              >
+                {message.text}
+              </Text>
+              {message.sender === 'ai' && (
+                <View style={styles.verifiedTag}>
+                  <Text style={styles.verifiedText}>Safe Info • Verified Source</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.chatInputContainer}>
+        <TextInput
+          style={styles.chatInput}
+          placeholder="Ask about fitness, nutrition, wellness..."
+          placeholderTextColor="#95a5a6"
+          value={chatInput}
+          onChangeText={setChatInput}
+          multiline
+        />
+        <Pressable style={styles.sendButton} onPress={sendMessage}>
+          <Text style={styles.sendButtonText}>Send</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderProgressScreen = () => (
+    <ScrollView style={styles.container}>
+      <Text style={styles.screenTitle}>Progress Tracking</Text>
+
+      <Card style={styles.progressCard}>
+        <Card.Content>
+          <Text style={styles.cardTitle}>Weekly Overview</Text>
+          {/* TODO: Add chart here - use react-native-chart-kit or victory-native */}
+          <View style={styles.chartPlaceholder}>
+            <Text style={styles.placeholderText}>📈 Weekly Activity Chart</Text>
+          </View>
+          <View style={styles.progressStats}>
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>12</Text>
+              <Text style={styles.progressLabel}>Workouts</Text>
+            </View>
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>3.5k</Text>
+              <Text style={styles.progressLabel}>Calories</Text>
+            </View>
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>8hrs</Text>
+              <Text style={styles.progressLabel}>Active Time</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <View style={styles.achievementsContainer}>
+        <Text style={styles.sectionTitle}>Achievements</Text>
+        <View style={styles.achievementsList}>
+          {[
+            { icon: '👑', title: 'Consistency King', desc: '7-day streak' },
+            { icon: '💧', title: 'Hydration Hero', desc: 'Daily goal met' },
+            { icon: '🏃', title: 'Step Master', desc: '10k steps/day' },
+          ].map((achievement, idx) => (
+            <View key={idx} style={styles.achievementCard}>
+              <Text style={styles.achievementIcon}>{achievement.icon}</Text>
+              <View>
+                <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                <Text style={styles.achievementDesc}>{achievement.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const renderCommunityScreen = () => (
+    <ScrollView style={styles.container}>
+      <Text style={styles.screenTitle}>Community Challenges</Text>
+
+      <Card style={styles.challengeCard}>
+        <Card.Content>
+          <Text style={styles.challengeTitle}>7-Day Step Goal</Text>
+          <Text style={styles.challengeDesc}>Walk 10,000 steps daily for a week</Text>
+          <View style={styles.challengeStats}>
+            <Text style={styles.challengeStat}>👥 1,234 participants</Text>
+            <Text style={styles.challengeStat}>🏆 Win badges!</Text>
+          </View>
+          <Button mode="contained" style={styles.joinButton}>
+            Join Challenge
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.challengeCard}>
+        <Card.Content>
+          <Text style={styles.challengeTitle}>No-Sugar Week</Text>
+          <Text style={styles.challengeDesc}>Avoid added sugars for 7 days</Text>
+          <View style={styles.challengeStats}>
+            <Text style={styles.challengeStat}>👥 892 participants</Text>
+            <Text style={styles.challengeStat}>🏆 Exclusive badge</Text>
+          </View>
+          <Button mode="contained" style={styles.joinButton}>
+            Join Challenge
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <View style={styles.leaderboardContainer}>
+        <Text style={styles.sectionTitle}>Top Performers</Text>
+        {[
+          { name: 'Alex M.', score: 2450, rank: 1 },
+          { name: 'Sarah K.', score: 2380, rank: 2 },
+          { name: 'Mike R.', score: 2310, rank: 3 },
+          { name: 'Emma L.', score: 2205, rank: 4 },
+          { name: 'You', score: 2150, rank: 5 },
+        ].map((user) => (
+          <View key={user.rank} style={styles.leaderboardItem}>
+            <Text style={styles.leaderboardRank}>#{user.rank}</Text>
+            <Text style={styles.leaderboardName}>{user.name}</Text>
+            <Text style={styles.leaderboardScore}>{user.score} pts</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+
+  const renderProfileScreen = () => (
+    <ScrollView style={styles.container}>
+      <View style={styles.profileHeader}>
+        <Avatar.Text size={80} label={userName[0] || 'U'} style={styles.profileAvatar} />
+        <Text style={styles.profileName}>{userName || 'User'}</Text>
+        <Text style={styles.profileStats}>
+          {age} years • {gender} • {fitnessLevel}
+        </Text>
+      </View>
+
+      <Card style={styles.profileCard}>
+        <Card.Content>
+          <Text style={styles.cardTitle}>Fitness Profile</Text>
+          <View style={styles.profileItem}>
+            <Text style={styles.profileItemLabel}>Goal:</Text>
+            <Text style={styles.profileItemValue}>
+              {fitnessGoal === 'lose'
+                ? 'Lose Weight'
+                : fitnessGoal === 'build'
+                ? 'Build Muscle'
+                : 'Stay Active'}
+            </Text>
+          </View>
+          <View style={styles.profileItem}>
+            <Text style={styles.profileItemLabel}>Schedule:</Text>
+            <Text style={styles.profileItemValue}>
+              {daysPerWeek} days/week • {minutesPerSession} min/session
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.profileCard}>
+        <Card.Content>
+          <Text style={styles.cardTitle}>Settings</Text>
+          <Pressable style={styles.settingItem}>
+            <Text style={styles.settingText}>Notifications</Text>
+          </Pressable>
+          <Pressable style={styles.settingItem}>
+            <Text style={styles.settingText}>Privacy</Text>
+          </Pressable>
+          <Pressable style={styles.settingItem}>
+            <Text style={styles.settingText}>Help & Support</Text>
+          </Pressable>
+        </Card.Content>
+      </Card>
+    </ScrollView>
+  );
+
+  const renderBottomNav = () => (
+    <View style={styles.bottomNav}>
+      <Pressable
+        style={styles.navItem}
+        onPress={() => setCurrentPage('home')}
+      >
+        <Text style={styles.navIcon}>🏠</Text>
+        <Text
+          style={[
+            styles.navLabel,
+            currentPage === 'home' && styles.navLabelActive,
+          ]}
+        >
+          Home
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.navItem}
+        onPress={() => setCurrentPage('coach')}
+      >
+        <Text style={styles.navIcon}>🤖</Text>
+        <Text
+          style={[
+            styles.navLabel,
+            currentPage === 'coach' && styles.navLabelActive,
+          ]}
+        >
+          AI Coach
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.navItem}
+        onPress={() => setCurrentPage('progress')}
+      >
+        <Text style={styles.navIcon}>📊</Text>
+        <Text
+          style={[
+            styles.navLabel,
+            currentPage === 'progress' && styles.navLabelActive,
+          ]}
+        >
+          Progress
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.navItem}
+        onPress={() => setCurrentPage('community')}
+      >
+        <Text style={styles.navIcon}>👥</Text>
+        <Text
+          style={[
+            styles.navLabel,
+            currentPage === 'community' && styles.navLabelActive,
+          ]}
+        >
+          Community
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.navItem}
+        onPress={() => setCurrentPage('profile')}
+      >
+        <Text style={styles.navIcon}>👤</Text>
+        <Text
+          style={[
+            styles.navLabel,
+            currentPage === 'profile' && styles.navLabelActive,
+          ]}
+        >
+          Profile
+        </Text>
+      </Pressable>
+    </View>
+  );
+
+  const renderFloatingButton = () => {
+    if (currentPage === 'onboarding' || currentPage === 'coach') return null;
+
+    return (
+      <Pressable
+        style={styles.floatingButton}
+        onPress={() => setCurrentPage('coach')}
+      >
+        {/* TODO: Add LottieView here */}
+        {/* Find 'glowing AI orb animation' on LottieFiles.com */}
+        <Text style={styles.floatingButtonIcon}>✨</Text>
+        <Text style={styles.floatingButtonText}>Ask FitGenie</Text>
+      </Pressable>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      
+      {currentPage === 'onboarding' && renderOnboardingScreen()}
+      {currentPage === 'home' && renderHomeScreen()}
+      {currentPage === 'coach' && renderCoachScreen()}
+      {currentPage === 'progress' && renderProgressScreen()}
+      {currentPage === 'community' && renderCommunityScreen()}
+      {currentPage === 'profile' && renderProfileScreen()}
+
+      {currentPage !== 'onboarding' && renderBottomNav()}
+      {renderFloatingButton()}
+    </SafeAreaView>
+  );
+}
+
+const COLORS = {
+  primary: '#14b8a6', // Teal
+  secondary: '#3b82f6', // Blue
+  accent: '#84cc16', // Lime green
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#6b7280',
+  lightGray: '#f3f4f6',
+  darkGray: '#374151',
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+
+  // Onboarding Styles
+  onboardingHeader: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: COLORS.lightGray,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: COLORS.primary,
+    fontFamily: 'System',
+    letterSpacing: 1,
+  },
+  onboardingSubtitle: {
+    fontSize: 16,
+    color: COLORS.gray,
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  progressBar: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.lightGray,
+    borderWidth: 2,
+    borderColor: COLORS.gray,
+  },
+  progressDotActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  onboardingContent: {
+    flex: 1,
+  },
+  stepContainer: {
+    padding: 24,
+  },
+  stepTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 8,
+  },
+  stepDescription: {
+    fontSize: 16,
+    color: COLORS.gray,
+    marginBottom: 24,
+  },
+  illustrationPlaceholder: {
+    height: 200,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  placeholderText: {
+    fontSize: 48,
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 16,
+    backgroundColor: COLORS.white,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.darkGray,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  optionButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    alignItems: 'center',
+  },
+  optionButtonActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '20',
+  },
+  optionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.gray,
+  },
+  optionButtonTextActive: {
+    color: COLORS.primary,
+  },
+  goalCard: {
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    marginBottom: 16,
+  },
+  goalCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
+  },
+  goalCardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 4,
+  },
+  goalCardDesc: {
+    fontSize: 14,
+    color: COLORS.gray,
+  },
+  levelCard: {
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  levelCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '20',
+  },
+  levelCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.darkGray,
+  },
+  onboardingFooter: {
+    padding: 24,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  nextButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+  },
+  nextButtonLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    paddingVertical: 8,
+  },
+
+  // Home Screen Styles
+  homeHeader: {
+    padding: 24,
+    backgroundColor: COLORS.lightGray,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 8,
+  },
+  motivationQuote: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: COLORS.gray,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
+  workoutCard: {
+    margin: 16,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  nutritionCard: {
+    margin: 16,
+    marginTop: 0,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 8,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginBottom: 16,
+  },
+  startButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+  },
+  startButtonLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  nutritionItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  nutritionValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.secondary,
+  },
+  nutritionLabel: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
+  badgesContainer: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 16,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  badge: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  badgeEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.gray,
+  },
+
+  // Coach Screen Styles
+  coachContainer: {
+    flex: 1,
+  },
+  coachHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: COLORS.lightGray,
+    gap: 12,
+  },
+  coachAvatar: {
+    backgroundColor: COLORS.primary,
+  },
+  coachTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+  },
+  coachSubtitle: {
+    fontSize: 12,
+    color: COLORS.gray,
+  },
+  chatContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 8,
+  },
+  userMessage: {
+    justifyContent: 'flex-end',
+  },
+  aiMessage: {
+    justifyContent: 'flex-start',
+  },
+  messageAvatar: {
+    backgroundColor: COLORS.primary,
+  },
+  messageBubble: {
+    maxWidth: '75%',
+    padding: 12,
+    borderRadius: 16,
+  },
+  userMessageBubble: {
+    backgroundColor: COLORS.primary,
+    marginLeft: 'auto',
+  },
+  aiMessageBubble: {
+    backgroundColor: COLORS.lightGray,
+  },
+  messageText: {
+    fontSize: 15,
+    color: COLORS.darkGray,
+    lineHeight: 22,
+  },
+  userMessageText: {
+    color: COLORS.white,
+  },
+  verifiedTag: {
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: COLORS.accent + '30',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  verifiedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.accent,
+  },
+  chatInputContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+    backgroundColor: COLORS.white,
+  },
+  chatInput: {
+    flex: 1,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  sendButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    justifyContent: 'center',
+  },
+  sendButtonText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+
+  // Progress Screen Styles
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    padding: 24,
+  },
+  progressCard: {
+    margin: 16,
+    marginTop: 0,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  chartPlaceholder: {
+    height: 200,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  progressStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  progressValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  progressLabel: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
+  achievementsContainer: {
+    padding: 16,
+  },
+  achievementsList: {
+    gap: 12,
+  },
+  achievementCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    gap: 16,
+  },
+  achievementIcon: {
+    fontSize: 40,
+  },
+  achievementTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+  },
+  achievementDesc: {
+    fontSize: 14,
+    color: COLORS.gray,
+  },
+
+  // Community Screen Styles
+  challengeCard: {
+    margin: 16,
+    marginTop: 0,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  challengeTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 8,
+  },
+  challengeDesc: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginBottom: 12,
+  },
+  challengeStats: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16,
+  },
+  challengeStat: {
+    fontSize: 12,
+    color: COLORS.gray,
+  },
+  joinButton: {
+    backgroundColor: COLORS.secondary,
+    borderRadius: 12,
+  },
+  leaderboardContainer: {
+    padding: 16,
+  },
+  leaderboardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    marginBottom: 8,
+    gap: 16,
+  },
+  leaderboardRank: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primary,
+    width: 40,
+  },
+  leaderboardName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.darkGray,
+  },
+  leaderboardScore: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.secondary,
+  },
+
+  // Profile Screen Styles
+  profileHeader: {
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: COLORS.lightGray,
+  },
+  profileAvatar: {
+    backgroundColor: COLORS.primary,
+    marginBottom: 16,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.darkGray,
+    marginBottom: 4,
+  },
+  profileStats: {
+    fontSize: 14,
+    color: COLORS.gray,
+  },
+  profileCard: {
+    margin: 16,
+    borderRadius: 16,
+    elevation: 2,
+  },
+  profileItem: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+  },
+  profileItemLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.gray,
+    width: 100,
+  },
+  profileItemValue: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.darkGray,
+  },
+  settingItem: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  settingText: {
+    fontSize: 16,
+    color: COLORS.darkGray,
+  },
+
+  // Bottom Navigation Styles
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+    paddingVertical: 8,
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  navIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: COLORS.gray,
+    fontWeight: '600',
+  },
+  navLabelActive: {
+    color: COLORS.primary,
+    fontWeight: '800',
+  },
+
+  // Floating Button Styles
+  floatingButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    elevation: 8,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  floatingButtonIcon: {
+    fontSize: 20,
+  },
+  floatingButtonText: {
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+
+  const [userName, setUserName] = useState<string | null>(null);
+
+  const showLogin = () => setPage('login');
+  const showSignup = () => setPage('signup');
+  const showDashboard = () => setPage('dashboard');
+
+  const handleLogin = () => {
+    // simple demo logic: set userName and navigate
+    setUserName(loginEmail ? loginEmail.split('@')[0] : 'USER');
+    setLoginEmail('');
+    setLoginPassword('');
+    showDashboard();
+  };
+
+  const handleSignup = () => {
+    setUserName(signupName || (signupEmail ? signupEmail.split('@')[0] : 'NEW'));
+    setSignupName('');
+    setSignupEmail('');
+    setSignupPassword('');
+    showDashboard();
+  };
+
+  const handleLogout = () => {
+    setUserName(null);
+    setIsSidebarOpen(false);
+    showLogin();
+  };
+
+  const toggleSidebar = () => setIsSidebarOpen((s) => !s);
+  const closeSidebar = () => setIsSidebarOpen(false);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.container}>
+        {/* Phone frame */}
+        <View style={styles.phoneFrame}>
+          {/* LOGIN PAGE */}
+          {page === 'login' && (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={[styles.page, styles.authPage]}
+            >
+              <View style={styles.logoSection}>
+                <View style={styles.authLogo}>
+                  <Text style={styles.authLogoIcon}>💪</Text>
+                </View>
+                <Text style={styles.brandName}>FITNESSFREAK</Text>
+                <Text style={styles.authTagline}>Your AI Fitness Companion</Text>
+              </View>
+
+              <View style={styles.authFormContainer}>
+                <Text style={styles.formTitle}>WELCOME BACK</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="your@email.com"
+                    placeholderTextColor="#7f8c8d"
+                    value={loginEmail}
+                    onChangeText={setLoginEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Enter password"
+                    placeholderTextColor="#7f8c8d"
+                    secureTextEntry
+                    value={loginPassword}
+                    onChangeText={setLoginPassword}
+                  />
+                </View>
+
+                <Pressable style={styles.submitBtn} onPress={handleLogin}>
+                  <Text style={styles.submitBtnText}>Login</Text>
+                </Pressable>
+
+                <Text style={styles.switchText}>
+                  Don't have an account?{' '}
+                  <Text style={styles.switchLink} onPress={showSignup}>
+                    Sign Up
+                  </Text>
+                </Text>
+              </View>
+            </KeyboardAvoidingView>
+          )}
+
+          {/* SIGNUP PAGE */}
+          {page === 'signup' && (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={[styles.page, styles.authPage]}
+            >
+              <View style={styles.logoSection}>
+                <View style={styles.authLogo}>
+                  <Text style={styles.authLogoIcon}>💪</Text>
+                </View>
+                <Text style={styles.brandName}>FITNESSFREAK</Text>
+                <Text style={styles.authTagline}>Start Your Fitness Journey</Text>
+              </View>
+
+              <View style={styles.authFormContainer}>
+                <Text style={styles.formTitle}>CREATE ACCOUNT</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="John Doe"
+                    placeholderTextColor="#7f8c8d"
+                    value={signupName}
+                    onChangeText={setSignupName}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="your@email.com"
+                    placeholderTextColor="#7f8c8d"
+                    value={signupEmail}
+                    onChangeText={setSignupEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Create password"
+                    placeholderTextColor="#7f8c8d"
+                    secureTextEntry
+                    value={signupPassword}
+                    onChangeText={setSignupPassword}
+                  />
+                </View>
+
+                <Pressable style={styles.submitBtn} onPress={handleSignup}>
+                  <Text style={styles.submitBtnText}>Sign Up</Text>
+                </Pressable>
+
+                <Text style={styles.switchText}>
+                  Already have an account?{' '}
+                  <Text style={styles.switchLink} onPress={showLogin}>
+                    Login
+                  </Text>
+                </Text>
+              </View>
+            </KeyboardAvoidingView>
+          )}
+
+          {/* DASHBOARD PAGE */}
+          {page === 'dashboard' && (
+            <View style={[styles.page, styles.dashboardPage]}>
+              {/* Hamburger */}
+              <Pressable
+                style={[styles.hamburgerBtn, isSidebarOpen && styles.hamburgerBtnActive]}
+                onPress={toggleSidebar}
+                hitSlop={8}
+              >
+                <View style={styles.hamburgerLine} />
+                <View style={styles.hamburgerLine} />
+                <View style={styles.hamburgerLine} />
+              </Pressable>
+
+              {/* Sidebar */}
+              <View style={[styles.sidebar, isSidebarOpen ? styles.sidebarOpen : undefined]}>
+                <View style={styles.sidebarHeader}>
+                  <View style={styles.sidebarLogo}>
+                    <Text style={styles.sidebarLogoIcon}>💪</Text>
+                  </View>
+                  <Text style={styles.sidebarTitle}>FEATURES MENU</Text>
+                </View>
+
+                <ScrollView style={styles.sidebarMenu}>
+                  {[
+                    { icon: '🎯', title: 'Personalized Plans', desc: 'AI-powered workout & nutrition' },
+                    { icon: '🤖', title: 'AI Fitness Coach', desc: 'Real-time guidance 24/7' },
+                    { icon: '📊', title: 'Progress Tracking', desc: 'Monitor your fitness journey' },
+                    { icon: '🏆', title: 'Challenges & Badges', desc: 'Gamified fitness goals' },
+                    { icon: '👥', title: 'Community Hub', desc: 'Connect with enthusiasts' },
+                    { icon: '💡', title: 'Wellness Tips', desc: 'Daily health insights' },
+                  ].map((m, i) => (
+                    <Pressable key={i} style={styles.menuItem} onPress={() => { /* placeholder */ }}>
+                      <View style={styles.menuIcon}>
+                        <Text>{m.icon}</Text>
+                      </View>
+                      <View style={styles.menuText}>
+                        <Text style={styles.menuTitle}>{m.title}</Text>
+                        <Text style={styles.menuDescription}>{m.desc}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+
+                <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+                  <Text style={styles.logoutBtnText}>🚪 Logout</Text>
+                </Pressable>
+              </View>
+
+              {/* Overlay */}
+              {isSidebarOpen && (
+                <Pressable style={styles.overlay} onPress={closeSidebar} />
+              )}
+
+              {/* Main content */}
+              <View style={styles.content}>
+                <View style={styles.logoSectionSmall}>
+                  <View style={styles.logoCircle}>
+                    <Text style={styles.heartIcon}>💪</Text>
+                  </View>
+                  <Text style={styles.brandNameLight}>FITNESSFREAK</Text>
+                </View>
+
+                <Text style={styles.mainTitle}>WELCOME {userName ? userName.toUpperCase() : ''}</Text>
+                <Text style={styles.subtitle}>Your Fitness Journey Starts Here</Text>
+
+                <ScrollView style={styles.dashboardContainer} contentContainerStyle={{ paddingBottom: 30 }}>
+                  {/* Cards */}
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>🎯  Personalized Workout Plans</Text>
+                    <Text style={styles.cardContent}>
+                      Get AI-generated custom workout routines tailored to your fitness level, goals, and schedule.
+                      Build muscle, lose weight, or stay active with intelligent training plans.
+                    </Text>
+                  </View>
+
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>🤖  AI Fitness Coach</Text>
+                    <Text style={styles.cardContent}>
+                      24/7 RAG-powered virtual coach for real-time guidance, exercise alternatives, nutrition advice,
+                      and motivation to keep you on track.
+                    </Text>
+                  </View>
+
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>📊  Your Stats</Text>
+                    <View style={styles.statsGrid}>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>15</Text>
+                        <Text style={styles.statLabel}>Workouts</Text>
+                      </View>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>7</Text>
+                        <Text style={styles.statLabel}>Streak</Text>
+                      </View>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>2.5k</Text>
+                        <Text style={styles.statLabel}>Calories</Text>
+                      </View>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>24/7</Text>
+                        <Text style={styles.statLabel}>Support</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>🏆  Gamification & Rewards</Text>
+                    <Text style={styles.cardContent}>
+                      Earn badges, compete in challenges, climb leaderboards, and unlock achievements as you progress.
+                    </Text>
+                  </View>
+
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>👥  Community Challenges</Text>
+                    <Text style={styles.cardContent}>
+                      Join community-wide fitness challenges like "7-Day Step Goal" or "No-Sugar Week".
+                    </Text>
+                  </View>
+
+                  <View style={styles.dashboardCard}>
+                    <Text style={styles.cardTitle}>💡  Wellness & Mindfulness</Text>
+                    <Text style={styles.cardContent}>
+                      Daily tips on nutrition, posture, recovery, mental health, and overall wellness.
+                    </Text>
+                  </View>
+                </ScrollView>
+
+                <View style={styles.bottomNav}>
+                  <View style={styles.navItem}>
+                    <Text style={styles.navIcon}>🏠</Text>
+                    <Text style={styles.navLabel}>Home</Text>
+                  </View>
+                  <View style={styles.navItem}>
+                    <Text style={styles.navIcon}>📊</Text>
+                    <Text style={styles.navLabel}>Stats</Text>
+                  </View>
+                  <View style={styles.navItem}>
+                    <Text style={styles.navIcon}>🏆</Text>
+                    <Text style={styles.navLabel}>Rewards</Text>
+                  </View>
+
+                  <Pressable style={styles.talkButton} onPress={() => { /* placeholder */ }}>
+                    <Text style={styles.talkIcon}>💬</Text>
+                    <Text style={styles.talkText}>Talk</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const PRIMARY = '#16a085';
+const SECONDARY = '#1abc9c';
+const DARK = '#2c3e50';
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#667eea',
+  },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phoneFrame: {
+    width: 400,
+    height: 720,
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    borderWidth: 8,
+    borderColor: DARK,
+    overflow: 'hidden',
+    // shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
+    // elevation for Android
+    elevation: 10,
+  },
+
+  /* pages */
+  page: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+
+  /* auth page */
+  authPage: {
+    backgroundColor: SECONDARY,
+    paddingHorizontal: 30,
+    paddingTop: 40,
+    paddingBottom: 20,
+    justifyContent: 'flex-start',
+  },
+
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  authLogo: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    // shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  authLogoIcon: {
+    fontSize: 40,
+  },
+  brandName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 2,
+  },
+  authTagline: {
+    color: 'rgba(255,255,255,0.95)',
+    fontWeight: '600',
+  },
+
+  authFormContainer: {
+    marginTop: 16,
+    flex: 1,
+  },
+
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+
+  inputGroup: {
+    marginBottom: 14,
+  },
+  inputLabel: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: 1,
+  },
+  inputField: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 12,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#222',
+  },
+
+  submitBtn: {
+    marginTop: 8,
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  submitBtnText: {
+    color: SECONDARY,
+    fontWeight: '900',
+    fontSize: 16,
+    letterSpacing: 1.5,
+  },
+
+  switchText: {
+    textAlign: 'center',
+    color: '#fff',
+    marginTop: 14,
+    fontWeight: '600',
+  },
+  switchLink: {
+    color: '#c0ff00',
+    fontWeight: '800',
+    textDecorationLine: 'underline',
+  },
+
+  /* dashboard */
+  dashboardPage: {
+    backgroundColor: PRIMARY,
+  },
+
+  hamburgerBtn: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    zIndex: 1000,
+  },
+  hamburgerBtnActive: {
+    backgroundColor: 'rgba(255,255,255,0.28)',
+  },
+  hamburgerLine: {
+    width: 22,
+    height: 2.5,
+    backgroundColor: '#fff',
+    marginVertical: 2,
+    borderRadius: 2,
+  },
+
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    left: -320,
+    width: '75%',
+    maxWidth: 320,
+    height: '100%',
+    backgroundColor: PRIMARY,
+    zIndex: 999,
+    paddingTop: 60,
+  },
+  sidebarOpen: {
+    left: 0,
+  },
+  sidebarHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    paddingTop: 30,
+  },
+  sidebarLogo: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  sidebarLogoIcon: {
+    fontSize: 28,
+  },
+  sidebarTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  sidebarMenu: {
+    paddingVertical: 12,
+  },
+  menuItem: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuText: {
+    flex: 1,
+  },
+  menuTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  menuDescription: {
+    color: 'rgba(255,255,255,0.95)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  logoutBtn: {
+    marginTop: 12,
+    marginHorizontal: 18,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(231,76,60,0.95)',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  logoutBtnText: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    zIndex: 998,
+  },
+
+  content: {
+    flex: 1,
+    paddingTop: 80,
+    paddingHorizontal: 20,
+    paddingBottom: 90,
+  },
+
+  logoSectionSmall: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  heartIcon: {
+    fontSize: 26,
+    color: PRIMARY,
+  },
+  brandNameLight: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+
+  mainTitle: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginTop: 6,
+    letterSpacing: 2,
+  },
+
+  subtitle: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 6,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+
+  dashboardContainer: {
+    flex: 1,
+  },
+
+  dashboardCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    // shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  cardTitle: {
+    color: PRIMARY,
+    fontWeight: '900',
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  cardContent: {
+    color: '#7f8c8d',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+
+  statItem: {
+    backgroundColor: '#e8f8f5',
+    width: '48%',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: PRIMARY,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '800',
+    marginTop: 4,
+    textTransform: 'uppercase',
+  },
+
+  bottomNav: {
+    height: 72,
+    backgroundColor: PRIMARY,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  navItem: {
+    alignItems: 'center',
+  },
+  navIcon: {
+    fontSize: 18,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '800',
+  },
+
+  talkButton: {
+    position: 'absolute',
+    right: 12,
+    top: -22,
+    backgroundColor: DARK,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 24,
+    alignItems: 'center',
+    flexDirection: 'row',
+    elevation: 6,
+  },
+  talkIcon: {
+    color: '#fff',
+  },
+  talkText: {
+    color: '#fff',
+    fontWeight: '900',
+    marginLeft: 8,
+  },
+});
