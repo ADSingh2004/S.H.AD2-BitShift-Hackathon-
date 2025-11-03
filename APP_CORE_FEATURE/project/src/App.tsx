@@ -44,10 +44,15 @@ interface Profile {
 // Knowledge Base for RAG
 const knowledgeBase = {
   nutrition_substitutes: {
-    broccoli: "spinach, green beans, asparagus, or kale",
-    chicken: "turkey, tofu, fish, or legumes",
-    rice: "quinoa, cauliflower rice, or sweet potato",
-    milk: "almond milk, oat milk, or soy milk"
+    broccoli: "palak (spinach), methi (fenugreek), green beans, or gobhi (cauliflower)",
+    chicken: "paneer, tofu, fish, soya chunks, or legumes",
+    rice: "quinoa, daliya (broken wheat), ragi, or cauliflower rice",
+    milk: "toned milk, chaas (buttermilk), lassi, or soy milk",
+    protein: "whey protein, paneer, chana (chickpeas), moong dal, or masoor dal",
+    yogurt: "dahi (curd), chaas (buttermilk), lassi, or paneer",
+    indian_protein: "dal (lentils), rajma (kidney beans), chole (chickpeas), sprouts, or soya chunks",
+    indian_breakfast: "besan chilla, moong dal cheela, paneer bhurji, or masala oats",
+    indian_snacks: "roasted chana, makhana (foxnuts), mixed sprouts chat, or paneer tikka"
   },
   exercise_alternatives: {
     squats: "lunges, leg press, or step-ups",
@@ -135,6 +140,19 @@ const planGenerator = {
         "Dinner: Baked fish with steamed broccoli and quinoa"
       ]
     },
+    "lose-weight-indian": {
+      calories: 1800,
+      protein: 120,
+      carbs: 180,
+      fats: 50,
+      meals: [
+        "Breakfast: Moong Dal Cheela (protein-rich lentil pancake) with mint chutney",
+        "Snack: Mixed sprouts bhel with lemon and chaat masala",
+        "Lunch: Grilled tandoori paneer with mixed vegetable salad",
+        "Snack: Roasted makhana (foxnuts) with masala chaas",
+        "Dinner: Masoor dal with methi (fenugreek) roti and stir-fried vegetables"
+      ]
+    },
     "build-muscle": {
       calories: 2400,
       protein: 180,
@@ -148,23 +166,55 @@ const planGenerator = {
         "Dinner: Grilled salmon with sweet potato and asparagus"
       ]
     },
+    "build-muscle-indian": {
+      calories: 2400,
+      protein: 180,
+      carbs: 250,
+      fats: 70,
+      meals: [
+        "Breakfast: Paneer bhurji (scrambled paneer) with multigrain paratha and chana",
+        "Morning Snack: Protein lassi with mixed nuts and banana",
+        "Lunch: Chicken tikka with jeera rice and dal makhani",
+        "Evening Snack: Mixed dal and nuts ladoo with masala milk",
+        "Dinner: Egg curry with brown rice and palak (spinach)",
+        "Night Snack: Toned milk with protein powder and turmeric"
+      ]
+    },
     "stay-active": {
-      calories: 2000,
-      protein: 100,
+      calories: 2200,
+      protein: 140,
       carbs: 200,
       fats: 60,
       meals: [
-        "Breakfast: Smoothie bowl with granola",
-        "Snack: Mixed nuts and dried fruits",
-        "Lunch: Turkey sandwich with side salad",
-        "Snack: Hummus with veggie sticks",
-        "Dinner: Chicken stir-fry with vegetables and rice"
+        "Breakfast: Protein-boosted smoothie bowl (with Greek yogurt base & protein powder) and granola",
+        "Morning Snack: Mixed nuts and dried fruits with hard-boiled egg whites",
+        "Lunch: Turkey sandwich (extra portions) with Greek yogurt-based chicken salad",
+        "Afternoon Snack: Cottage cheese or Skyr with veggie sticks",
+        "Dinner: Chicken stir-fry (increased portion) with quinoa and vegetables",
+        "Night Snack: Casein protein pudding or cottage cheese (for overnight recovery)"
+      ]
+    },
+    "stay-active-indian": {
+      calories: 2200,
+      protein: 140,
+      carbs: 200,
+      fats: 60,
+      meals: [
+        "Breakfast: Paneer Besan Chilla with mint chutney (high-protein chickpea pancake)",
+        "Morning Snack: Spiced roasted chana (chickpeas) with almonds and mixed seeds",
+        "Lunch: Mixed Dal Khichdi with extra moong dal and vegetables",
+        "Afternoon Snack: Masala chaas (spiced buttermilk) with makhana (foxnuts)",
+        "Dinner: Soya chunks curry with multigrain roti and palak (spinach)",
+        "Night Snack: Turmeric milk with protein powder or overnight soaked almonds"
       ]
     }
   }
 };
 
+import Login from './components/Login';
+
 export default function FitGenieApp() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [step, setStep] = useState<'onboarding' | 'dashboard'>('onboarding');
   const [profile, setProfile] = useState<Profile>({
     name: '',
@@ -176,7 +226,7 @@ export default function FitGenieApp() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { type: 'bot', text: 'Hi! I\'m your AI fitness coach. Ask me anything about workouts, nutrition, or wellness!', verified: true }
+    { type: 'bot', text: 'Hi! I\'m your fitnessFREAK AI coach. Ask me anything about workouts, nutrition, or wellness!', verified: true }
   ]);
   const [inputMessage, setInputMessage] = useState('');
 
@@ -265,6 +315,18 @@ export default function FitGenieApp() {
       setStep('dashboard');
     }
   };
+
+  const handleLogin = (email: string) => {
+    // Here you would typically validate credentials with your backend
+    setIsAuthenticated(true);
+    setProfile(prev => ({ ...prev, name: email.split('@')[0] }));
+    setStep('onboarding');
+  };
+
+  // Login Screen
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   // Onboarding Screen
   if (step === 'onboarding') {
@@ -389,7 +451,7 @@ export default function FitGenieApp() {
               <Sparkles className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent">FitGenie</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent">fitnessFREAK</h1>
               <p className="text-xs text-gray-500">AI Fitness Coach</p>
             </div>
           </div>
@@ -445,7 +507,7 @@ export default function FitGenieApp() {
               className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-400 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow"
             >
               <MessageCircle size={20} />
-              Ask FitGenie
+              Ask fitnessFREAK
             </button>
           </div>
         </div>
@@ -557,7 +619,7 @@ export default function FitGenieApp() {
             <div className="bg-gradient-to-r from-teal-500 to-emerald-400 px-8 py-6 rounded-t-3xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-white text-2xl font-bold">Ask FitGenie AI Coach</h2>
+                  <h2 className="text-white text-2xl font-bold">Ask fitnessFREAK AI Coach</h2>
                   <p className="text-teal-50 text-sm flex items-center gap-2 mt-1">
                     <Sparkles size={14} />
                     Powered by RAG • Safe & Verified Responses
