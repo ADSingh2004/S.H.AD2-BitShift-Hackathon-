@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Bell, Lock, Moon, Sun, Save } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface SettingsProps {
   onClose: () => void;
 }
 
 export default function Settings({ onClose }: SettingsProps) {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
     notifications: {
       workoutReminders: true,
@@ -22,20 +26,125 @@ export default function Settings({ onClose }: SettingsProps) {
       publicProfile: false
     },
     account: {
-      email: '',
       units: 'metric' as 'metric' | 'imperial'
     }
   });
 
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    // Here you would save settings to your backend/database
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      onClose();
-    }, 1500);
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('No user found');
+
+      setUserId(user.id);
+
+      // Load user profile with settings
+      // First try to select settings column
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Profile error:', profileError);
+        // Column might not exist yet, just use defaults
+        return;
+      }
+
+      // If settings exist and have the settings property, merge them with defaults
+      if (profile && profile.settings && typeof profile.settings === 'object') {
+        setSettings(prevSettings => ({
+          notifications: { 
+            ...prevSettings.notifications, 
+            ...(profile.settings.notifications || {}) 
+          },
+          appearance: { 
+            ...prevSettings.appearance, 
+            ...(profile.settings.appearance || {}) 
+          },
+          privacy: { 
+            ...prevSettings.privacy, 
+            ...(profile.settings.privacy || {}) 
+          },
+          account: { 
+            ...prevSettings.account, 
+            ...(profile.settings.account || {}) 
+          }
+        }));
+      }
+
+    } catch (err: any) {
+      console.error('Error loading settings:', err);
+      // Don't show error to user if settings just don't exist yet
+      // setError('Failed to load settings. Using defaults.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!userId) {
+      setError('No user found. Please log in again.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      // Try to save settings to database
+      // First check if settings column exists by attempting the update
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ 
+          settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        // If column doesn't exist, show helpful message
+        if (updateError.message.includes('column') || updateError.code === '42703') {
+          console.warn('Settings column does not exist yet. Run the migration first.');
+          setError('Settings feature requires database update. Please contact administrator or run database migration.');
+          return;
+        }
+        throw updateError;
+      }
+
+      // Apply theme changes immediately
+      if (settings.appearance.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      // Show success message
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        onClose();
+      }, 1500);
+
+    } catch (err: any) {
+      console.error('Error saving settings:', err);
+      setError(err.message || 'Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -56,6 +165,23 @@ export default function Settings({ onClose }: SettingsProps) {
             </button>
           </div>
         </div>
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="p-8 flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading settings...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Error Message */}
+            {error && (
+              <div className="mx-8 mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            )}
 
         <div className="p-8 space-y-8">
           {/* Notifications Section */}
@@ -311,10 +437,15 @@ export default function Settings({ onClose }: SettingsProps) {
             </button>
             <button
               onClick={handleSave}
-              disabled={saved}
+              disabled={saved || saving}
               className="flex-1 py-4 bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-600 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {saved ? (
+              {saving ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : saved ? (
                 <>
                   <Save className="w-5 h-5" />
                   Settings Saved!
@@ -328,6 +459,8 @@ export default function Settings({ onClose }: SettingsProps) {
             </button>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

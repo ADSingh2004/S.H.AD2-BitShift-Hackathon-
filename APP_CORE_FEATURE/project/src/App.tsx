@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Play, Sparkles, Apple, Dumbbell, Award, ArrowRight, CheckCircle, Send } from 'lucide-react';
+import { MessageCircle, Play, Sparkles, Apple, Dumbbell, Award, CheckCircle, Send } from 'lucide-react';
 import { testDatabaseConnection, checkAuthStatus } from './utils/testConnection';
 import WorkoutInterface from './pages/StartWorker';
 import Login from './components/Login';
 import ProfileForm from './components/ProfileForm';
 import Settings from './components/Settings';
+import EnhancedOnboarding from './components/EnhancedOnboarding';
 
 // Types
 interface ChatMessage {
@@ -328,21 +329,6 @@ export default function FitGenieApp() {
     setInputMessage('');
   };
 
-  const handleProfileSubmit = () => {
-    const planKey = `${profile.goal}-${profile.level}` as keyof typeof planGenerator.workout;
-    const workoutPlan = planGenerator.workout[planKey];
-    const nutritionPlan = planGenerator.nutrition[profile.goal as keyof typeof planGenerator.nutrition];
-    
-    if (workoutPlan && nutritionPlan) {
-      setPlan({
-        workout: workoutPlan,
-        nutrition: nutritionPlan
-      });
-      
-      setStep('dashboard');
-    }
-  };
-
   const handleLogin = (email: string) => {
     // Here you would typically validate credentials with your backend
     setIsAuthenticated(true);
@@ -363,111 +349,35 @@ export default function FitGenieApp() {
   // Onboarding Screen
   if (step === 'onboarding') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-500 via-emerald-400 to-green-400 flex items-center justify-center p-4 py-8 overflow-y-auto">
-        <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-8 my-8">
-          <div className="text-center mb-8">
-            <div className="inline-block bg-gradient-to-r from-teal-500 to-emerald-400 rounded-2xl p-4 mb-4">
-              <Sparkles className="text-white" size={48} />
-            </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent mb-2">
-              Welcome to FitGenie
-            </h1>
-            <p className="text-gray-600">Your AI-powered fitness companion. Let's create your personalized plan!</p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">What's your name?</label>
-              <input
-                type="text"
-                placeholder="Enter your name"
-                value={profile.name}
-                onChange={(e) => setProfile({...profile, name: e.target.value})}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">What's your fitness goal?</label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { id: 'lose-weight', label: '🔥 Lose Weight', emoji: '🔥' },
-                  { id: 'build-muscle', label: '💪 Build Muscle', emoji: '💪' },
-                  { id: 'stay-active', label: '🏃 Stay Active', emoji: '🏃' }
-                ].map(goal => (
-                  <button
-                    key={goal.id}
-                    onClick={() => setProfile({...profile, goal: goal.id})}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      profile.goal === goal.id
-                        ? 'border-teal-500 bg-teal-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="text-3xl mb-2">{goal.emoji}</div>
-                    <div className="text-sm font-semibold">{goal.label.split(' ')[1]}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">What's your fitness level?</label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'beginner', label: 'Beginner', desc: 'Just starting out' },
-                  { id: 'intermediate', label: 'Intermediate', desc: 'Some experience' }
-                ].map(level => (
-                  <button
-                    key={level.id}
-                    onClick={() => setProfile({...profile, level: level.id})}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      profile.level === level.id
-                        ? 'border-teal-500 bg-teal-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-gray-800">{level.label}</div>
-                    <div className="text-sm text-gray-600">{level.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Days per week</label>
-                <select
-                  value={profile.days}
-                  onChange={(e) => setProfile({...profile, days: parseInt(e.target.value)})}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500"
-                >
-                  {[3, 4, 5, 6, 7].map(d => <option key={d} value={d}>{d} days</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Minutes per session</label>
-                <select
-                  value={profile.minutes}
-                  onChange={(e) => setProfile({...profile, minutes: parseInt(e.target.value)})}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500"
-                >
-                  {[20, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={handleProfileSubmit}
-              disabled={!profile.name || !profile.goal || !profile.level}
-              className="w-full bg-gradient-to-r from-teal-500 to-emerald-400 text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              Generate My Plan
-              <ArrowRight size={20} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <EnhancedOnboarding 
+        onComplete={(data) => {
+          // Update profile state with enhanced data
+          const newProfile = {
+            name: data.fullName,
+            goal: data.primaryGoal,
+            level: 'beginner', // Can be enhanced based on more data
+            days: 5,
+            minutes: 30
+          };
+          setProfile(newProfile);
+          
+          // Generate workout and nutrition plan based on goals
+          const planKey = `${data.primaryGoal}-beginner` as keyof typeof planGenerator.workout;
+          const workoutPlan = planGenerator.workout[planKey];
+          const nutritionPlan = planGenerator.nutrition[data.primaryGoal as keyof typeof planGenerator.nutrition];
+          
+          if (workoutPlan && nutritionPlan) {
+            setPlan({
+              workout: workoutPlan,
+              nutrition: nutritionPlan
+            });
+          }
+          
+          // Move to dashboard after completion
+          setStep('dashboard');
+        }}
+        userEmail={undefined} // Will be populated if coming from login
+      />
     );
   }
 
