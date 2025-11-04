@@ -7,13 +7,15 @@ from pathlib import Path
 # --- Configuration ---
 # Paths relative to the test folder
 DB_PATH = str(Path(__file__).parent.parent / "vector_db")
-COLLECTION_NAME = "fitness_knowledge"
+FITNESS_COLLECTION = "fitness_knowledge"
+NUTRITION_COLLECTION = "nutrition_knowledge"
 GENERATION_MODEL = "models/gemini-2.5-flash"  # Updated to use available model
 GEMINI_API_KEY = "AIzaSyDMcQeqPU7DnA-7GN7wneAwHeDEU8-blp8"
 
 def initialize_models():
     """
     Initialize and configure Gemini models and ChromaDB client.
+    Loads both fitness and nutrition collections.
     """
     # 1. Setup Gemini API Key
     try:
@@ -22,18 +24,25 @@ def initialize_models():
         print("✅ Gemini API key configured.")
     except Exception as e:
         print(f"❌ FATAL: Failed to configure Gemini API key: {e}")
-        return None, None
+        return None, None, None
     
-    # 2. Setup ChromaDB
+    # 2. Setup ChromaDB - Load both collections
     try:
         client = chromadb.PersistentClient(path=DB_PATH)
-        collection = client.get_collection(name=COLLECTION_NAME)
-        print(f"✅ ChromaDB collection '{COLLECTION_NAME}' loaded with {collection.count()} documents.")
+        
+        # Load fitness collection
+        fitness_collection = client.get_collection(name=FITNESS_COLLECTION)
+        print(f"✅ Fitness collection loaded: {fitness_collection.count()} exercises")
+        
+        # Load nutrition collection
+        nutrition_collection = client.get_collection(name=NUTRITION_COLLECTION)
+        print(f"✅ Nutrition collection loaded: {nutrition_collection.count()} food items")
+        
     except Exception as e:
-        print(f"❌ FATAL: Could not load ChromaDB collection.")
+        print(f"❌ FATAL: Could not load ChromaDB collections.")
         print(f"Error: {e}")
-        print(f"Please make sure '{DB_PATH}' exists and ingestion was successful.")
-        return None, None
+        print(f"Please make sure '{DB_PATH}' exists and both ingestions were successful.")
+        return None, None, None
 
     # 3. Initialize Generative Model for chat
     # Try different model names in order of preference
@@ -58,50 +67,74 @@ def initialize_models():
     
     if not generation_model:
         print("❌ FATAL: No compatible Gemini model found.")
-        return None, None
+        return None, None, None
     
-    return collection, generation_model
+    return fitness_collection, nutrition_collection, generation_model
 
-def get_rag_response(query, collection, generation_model, k=5):
+def get_rag_response(query, fitness_collection, nutrition_collection, generation_model, k=5):
     """
     Performs the full RAG pipeline: Retrieve, Augment, Generate.
-    Note: ChromaDB with SentenceTransformer handles embeddings automatically.
+    Searches both fitness and nutrition collections and combines results.
     """
     
-    # 1. RETRIEVE: Query ChromaDB for k nearest neighbors
-    # ChromaDB will automatically embed the query using the same model from ingestion
-    print(f"\n🔍 Searching for: '{query[:50]}...'")
+    # 1. RETRIEVE: Query both ChromaDB collections for k nearest neighbors
+    print(f"\n🔍 Searching in both fitness and nutrition databases...")
     
-    results = collection.query(
-        query_texts=[query],  # ChromaDB will embed this automatically
+    # Search fitness collection
+    fitness_results = fitness_collection.query(
+        query_texts=[query],
         n_results=k
     )
     
-    retrieved_docs = results["documents"][0]
-    retrieved_metadata = results["metadatas"][0]
+    # Search nutrition collection
+    nutrition_results = nutrition_collection.query(
+        query_texts=[query],
+        n_results=k
+    )
+    
+    # Combine results
+    all_docs = []
+    all_metadata = []
+    
+    # Add fitness results
+    if fitness_results["documents"][0]:
+        all_docs.extend(fitness_results["documents"][0])
+        all_metadata.extend([{**meta, "source": "fitness"} for meta in fitness_results["metadatas"][0]])
+    
+    # Add nutrition results
+    if nutrition_results["documents"][0]:
+        all_docs.extend(nutrition_results["documents"][0])
+        all_metadata.extend([{**meta, "source": "nutrition"} for meta in nutrition_results["metadatas"][0]])
     
     # Prepare context for the prompt
-    context = "\n---\n".join(retrieved_docs)
+    context = "\n---\n".join(all_docs)
     
     # Print what was retrieved (good for debugging)
     print("\n--- 📚 Retrieved Context ---")
-    for i, meta in enumerate(retrieved_metadata):
-        print(f"  {i+1}. {meta['title']} ({meta['level']})")
-        print(f"     Body Part: {meta['body_part']}, Equipment: {meta['equipment']}")
+    for i, meta in enumerate(all_metadata):
+        if meta.get("source") == "fitness":
+            print(f"  {i+1}. [EXERCISE] {meta.get('title', 'N/A')} ({meta.get('level', 'N/A')})")
+            print(f"     Body Part: {meta.get('body_part', 'N/A')}, Equipment: {meta.get('equipment', 'N/A')}")
+        else:
+            print(f"  {i+1}. [FOOD] {meta.get('name', 'N/A')}")
+            print(f"     Calories: {meta.get('calories', 'N/A')} kcal, Protein: {meta.get('protein', 'N/A')}")
     print("-" * 50)
 
     # 2. AUGMENT: Create the prompt
     prompt = f"""
 You are an expert AI Fitness Coach named FitGenie.
-Your task is to answer the user's question based *only* on the "Verified Exercises" provided below.
-Do not use any other knowledge outside of these exercises.
+Your task is to answer the user's question based *only* on the verified information provided below.
 
-If the provided exercises do not directly answer the question, provide the most relevant exercises and explain how they relate to the user's query.
+You have access to TWO types of data:
+1. Exercise Database - workout exercises with details
+2. Nutrition Database - food items with nutritional information
+
+Provide answers based on the most relevant information from these databases.
 
 **User's Question:**
 {query}
 
-**Verified Exercises from Database:**
+**Verified Information from Databases:**
 {context}
 
 **Your Answer (be concise, helpful, and encouraging):**
@@ -121,15 +154,16 @@ def main():
     Main chat loop for the terminal.
     """
     print("\n" + "=" * 60)
-    print("🤖 FitGenie AI Fitness Coach (Terminal Test)")
+    print("🤖 FitGenie AI Fitness & Nutrition Coach (Terminal Test)")
     print("=" * 60)
     
-    collection, generation_model = initialize_models()
+    fitness_collection, nutrition_collection, generation_model = initialize_models()
     
-    if not collection:
+    if not fitness_collection or not nutrition_collection:
         return  # Exit if setup failed
 
-    print("\n💪 Ask me about exercises from the megaGym database!")
+    print("\n💪 Ask me about exercises and nutrition!")
+    print("   I can help with workouts AND food choices!")
     print("   (Type 'q' or 'quit' to exit)")
     print("-" * 60)
 
@@ -144,8 +178,8 @@ def main():
             if not user_query.strip():
                 continue
                 
-            # Get the RAG response
-            answer = get_rag_response(user_query, collection, generation_model)
+            # Get the RAG response from both collections
+            answer = get_rag_response(user_query, fitness_collection, nutrition_collection, generation_model)
             
             # Print the formatted answer
             print(f"\n🤖 FitGenie:")
