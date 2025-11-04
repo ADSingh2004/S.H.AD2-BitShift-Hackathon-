@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { signIn, signUp } from '../utils/auth';
 
 interface LoginProps {
   onLogin: (email: string) => void;
@@ -8,10 +9,42 @@ interface LoginProps {
 export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    onLogin(email);
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        // Sign up new user
+        const result = await signUp(email, password);
+        if (result.success) {
+          setSuccess('Account created! Please check your email to confirm.');
+          // For development, auto-login after signup
+          setTimeout(() => {
+            onLogin(email);
+          }, 1500);
+        } else {
+          setError(result.error || 'Sign up failed');
+        }
+      } else {
+        // Sign in existing user
+        const result = await signIn(email, password);
+        if (result.success) {
+          onLogin(email);
+        } else {
+          setError(result.error || 'Login failed');
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,10 +55,22 @@ export default function Login({ onLogin }: LoginProps) {
             <Sparkles className="w-[45px] h-[45px] text-white" />
           </div>
           <h1 className="text-3xl font-bold text-teal-600 mb-2">
-            Welcome to fitnessFREAK
+            {isSignUp ? 'Create Account' : 'Welcome to fitnessFREAK'}
           </h1>
           <p className="text-gray-500 text-[15px]">Your AI-powered fitness companion</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-[22px]">
@@ -74,9 +119,10 @@ export default function Login({ onLogin }: LoginProps) {
 
           <button
             type="submit"
-            className="w-full py-4 bg-teal-600 text-white text-base font-semibold rounded-xl cursor-pointer transition-all hover:bg-teal-700 hover:shadow-lg active:transform active:translate-y-0.5"
+            disabled={loading}
+            className="w-full py-4 bg-teal-600 text-white text-base font-semibold rounded-xl cursor-pointer transition-all hover:bg-teal-700 hover:shadow-lg active:transform active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Login')}
           </button>
         </form>
 
@@ -103,10 +149,18 @@ export default function Login({ onLogin }: LoginProps) {
         </div>
 
         <div className="text-center text-gray-500 text-sm">
-          Don't have an account?{' '}
-          <a href="#signup" className="text-teal-500 font-semibold hover:text-teal-600">
-            Sign up
-          </a>
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button 
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+              setSuccess('');
+            }}
+            className="text-teal-500 font-semibold hover:text-teal-600"
+          >
+            {isSignUp ? 'Login' : 'Sign up'}
+          </button>
         </div>
       </div>
     </div>

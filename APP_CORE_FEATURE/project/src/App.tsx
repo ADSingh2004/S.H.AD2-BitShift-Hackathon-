@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, Play, Sparkles, Apple, Dumbbell, Award, ArrowRight, CheckCircle, Send } from 'lucide-react';
+import { testDatabaseConnection, checkAuthStatus } from './utils/testConnection';
+import WorkoutInterface from './pages/StartWorker';
+import Login from './components/Login';
+import ProfileForm from './components/ProfileForm';
+import Settings from './components/Settings';
 
 // Types
 interface ChatMessage {
@@ -211,11 +216,11 @@ const planGenerator = {
   }
 };
 
-import Login from './components/Login';
-
 export default function FitGenieApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [step, setStep] = useState<'onboarding' | 'dashboard'>('onboarding');
+  const [step, setStep] = useState<'onboarding' | 'dashboard' | 'workout'>('onboarding');
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [profile, setProfile] = useState<Profile>({
     name: '',
     goal: '',
@@ -229,6 +234,28 @@ export default function FitGenieApp() {
     { type: 'bot', text: 'Hi! I\'m your fitnessFREAK AI coach. Ask me anything about workouts, nutrition, or wellness!', verified: true }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+
+  // Test database connection on mount
+  useEffect(() => {
+    const initializeApp = async () => {
+      console.log('🚀 Initializing FitGenie App...');
+      
+      // Test database connection
+      const dbConnected = await testDatabaseConnection();
+      if (dbConnected) {
+        console.log('✅ Database ready!');
+      }
+      
+      // Check if user is already logged in
+      const user = await checkAuthStatus();
+      if (user) {
+        setIsAuthenticated(true);
+        setProfile(prev => ({ ...prev, name: user.email?.split('@')[0] || 'User' }));
+      }
+    };
+    
+    initializeApp();
+  }, []);
 
   // RAG-powered chat response generator
   const generateRAGResponse = (userQuery: string) => {
@@ -326,6 +353,11 @@ export default function FitGenieApp() {
   // Login Screen
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
+  }
+
+  // Workout Screen
+  if (step === 'workout') {
+    return <WorkoutInterface onBack={() => setStep('dashboard')} />;
   }
 
   // Onboarding Screen
@@ -480,7 +512,16 @@ export default function FitGenieApp() {
         </div>
 
         <div className="p-4 border-t border-gray-200">
-          <button className="w-full text-left text-sm text-gray-600 hover:text-gray-800 py-2">
+          <button 
+            onClick={() => setShowProfileForm(true)}
+            className="w-full text-left text-sm text-gray-600 hover:text-gray-800 py-2"
+          >
+            👤 Edit Profile
+          </button>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="w-full text-left text-sm text-gray-600 hover:text-gray-800 py-2"
+          >
             ⚙️ Settings
           </button>
           <button 
@@ -550,7 +591,10 @@ export default function FitGenieApp() {
                     </div>
                   </div>
 
-                  <button className="w-full bg-white text-teal-600 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors">
+                  <button 
+                    onClick={() => setStep('workout')}
+                    className="w-full bg-white text-teal-600 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors"
+                  >
                     <Play size={20} fill="currentColor" />
                     Start Workout
                   </button>
@@ -611,6 +655,31 @@ export default function FitGenieApp() {
           </div>
         </div>
       </div>
+
+      {/* Profile Form Modal */}
+      {showProfileForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-8">
+          <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="bg-gradient-to-r from-teal-500 to-emerald-400 px-8 py-6 rounded-t-3xl sticky top-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-white text-2xl font-bold">Edit Your Profile</h2>
+                  <p className="text-teal-50 text-sm mt-1">Update your personal information and fitness details</p>
+                </div>
+                <button
+                  onClick={() => setShowProfileForm(false)}
+                  className="text-white text-3xl hover:bg-white/20 w-10 h-10 rounded-full transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-8">
+              <ProfileForm />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Chat Modal (RAG-Powered) */}
       {showChat && (
@@ -680,6 +749,11 @@ export default function FitGenieApp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
       )}
 
     </div>
