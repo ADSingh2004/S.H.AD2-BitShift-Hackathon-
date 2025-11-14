@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# FitnessFREAK Mobile App - Quick Start Script
+# B.R.A.V.O Mobile App - Quick Start Script
 # This script helps you set up and run the mobile app
 
-echo "🏋️ FitnessFREAK Mobile App - Quick Start"
+echo "🏋️ B.R.A.V.O Mobile App - Quick Start"
 echo "========================================"
 echo ""
 

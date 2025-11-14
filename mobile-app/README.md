@@ -1,4 +1,4 @@
-# FitnessFREAK Mobile App
+# B.R.A.V.O Mobile App
 
 A React Native mobile application built with Expo that provides AI-powered personalized fitness and nutrition plans.
 

@@ -13,7 +13,7 @@ import {
 import { signIn, signUp } from '../utils/auth';
 
 interface LoginScreenProps {
-  onLogin: (email: string) => void;
+  onLogin?: (email: string) => void;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -35,7 +35,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         if (result.success) {
           setSuccess('Account created! Please check your email to confirm.');
           setTimeout(() => {
-            onLogin(email);
+            onLogin?.(email);
           }, 1500);
         } else {
           setError(result.error || 'Sign up failed');
@@ -43,7 +43,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       } else {
         const result = await signIn(email, password);
         if (result.success) {
-          onLogin(email);
+          onLogin?.(email);
         } else {
           setError(result.error || 'Login failed');
         }
@@ -72,7 +72,11 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
           {/* Header */}
           <Text style={styles.title}>
-            {isSignUp ? 'Create Account' : 'Welcome to fitnessFREAK'}
+            {isSignUp ? 'Create Account' : (
+              <>
+                Welcome to <Text style={styles.boldBravo}>B.R.A.V.O</Text>
+              </>
+            )}
           </Text>
           <Text style={styles.subtitle}>Your AI-powered fitness companion</Text>
 
@@ -224,6 +228,10 @@ const styles = StyleSheet.create({
     color: '#14b8a6',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  boldBravo: {
+    fontWeight: '900',
+    color: '#0d9488',
   },
   subtitle: {
     fontSize: 15,

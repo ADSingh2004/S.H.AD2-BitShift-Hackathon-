@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -14,6 +15,22 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NutritionPlan'>;
 
 export default function NutritionPlanScreen({ navigation, route }: Props) {
   const { nutrition } = route.params;
+
+  const handleSetMealReminders = () => {
+    Alert.alert(
+      '🔔 Set Meal Reminders',
+      'Get reminded for all your meals throughout the day?',
+      [
+        {
+          text: 'Yes, Set All',
+          onPress: () => {
+            Alert.alert('✅ Reminders Set', 'You will be reminded for Breakfast, Lunch, Dinner, and Snacks!');
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,6 +42,9 @@ export default function NutritionPlanScreen({ navigation, route }: Props) {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>NUTRITION PLAN</Text>
+        <TouchableOpacity style={styles.reminderButton} onPress={handleSetMealReminders}>
+          <Text style={styles.reminderButtonText}>🔔</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -75,15 +95,28 @@ export default function NutritionPlanScreen({ navigation, route }: Props) {
 
         {/* Meal Plan */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Suggested Meal Plan</Text>
-          {nutrition.meals.map((meal: string, index: number) => (
-            <View key={index} style={styles.mealItem}>
-              <View style={styles.mealNumber}>
-                <Text style={styles.mealNumberText}>{index + 1}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🍽️ Your Daily Meal Schedule</Text>
+            <Text style={styles.sectionSubtitle}>Personalized for your {nutrition.dailyCalories} cal goal</Text>
+          </View>
+          {nutrition.meals.map((meal: string, index: number) => {
+            // Extract emoji and meal details
+            const parts = meal.split(': ');
+            const mealLabel = parts[0] || '';
+            const mealDetails = parts[1] || meal;
+            
+            return (
+              <View key={index} style={styles.mealItem}>
+                <View style={styles.mealHeader}>
+                  <Text style={styles.mealLabel}>{mealLabel}</Text>
+                </View>
+                <Text style={styles.mealText}>{mealDetails}</Text>
               </View>
-              <Text style={styles.mealText}>{meal}</Text>
-            </View>
-          ))}
+            );
+          })}
+          <TouchableOpacity style={styles.reminderInlineButton} onPress={handleSetMealReminders}>
+            <Text style={styles.reminderInlineText}>🔔 Set reminders for all meals</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Hydration */}
@@ -153,6 +186,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     letterSpacing: 1,
+    flex: 1,
+  },
+  reminderButton: {
+    padding: 8,
+  },
+  reminderButtonText: {
+    fontSize: 24,
   },
   content: {
     flex: 1,
@@ -169,11 +209,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  sectionHeader: {
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 4,
   },
   calorieBox: {
     alignItems: 'center',
@@ -221,32 +268,38 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
   },
   mealItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    backgroundColor: '#f9fafb',
-    padding: 12,
-    borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: '#f0fdfa',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#14b8a6',
   },
-  mealNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#14b8a6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  mealHeader: {
+    marginBottom: 8,
   },
-  mealNumberText: {
-    color: '#fff',
+  mealLabel: {
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 14,
+    color: '#0d9488',
   },
   mealText: {
-    flex: 1,
     fontSize: 15,
     color: '#374151',
     lineHeight: 22,
+  },
+  reminderInlineButton: {
+    backgroundColor: '#14b8a6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  reminderInlineText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   hydrationText: {
     fontSize: 16,

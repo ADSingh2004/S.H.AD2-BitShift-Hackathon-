@@ -7,16 +7,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from './src/screens/LoginScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
+import WorkoutPlanScreen from './src/screens/WorkoutPlanScreen';
 import NutritionPlanScreen from './src/screens/NutritionPlanScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import { OnboardingData, Profile, Plan } from './src/types';
+import { OnboardingData, Profile, Plan, WorkoutPlan } from './src/types';
 import { planGenerator } from './src/utils/planGenerator';
 
 type RootStackParamList = {
   Login: undefined;
   Onboarding: { userEmail: string };
   Dashboard: undefined;
+  WorkoutPlan: { workout: WorkoutPlan };
   NutritionPlan: { nutrition: any };
   EditProfile: { profile: Profile; onSave: (profile: Profile) => void };
   Settings: { onLogout: () => void };
@@ -57,7 +59,11 @@ export default function App() {
     // Generate workout and nutrition plan
     const planKey = `${data.primaryGoal}-beginner`;
     const workoutPlan = planGenerator.workout[planKey];
-    const nutritionPlan = planGenerator.nutrition[data.primaryGoal];
+    
+    // Select Indian meal plan if user prefers vegetarian/vegan diet
+    const isIndianDiet = data.dietPreference === 'vegetarian' || data.dietPreference === 'vegan';
+    const nutritionKey = isIndianDiet ? `${data.primaryGoal}-indian` : data.primaryGoal;
+    const nutritionPlan = planGenerator.nutrition[nutritionKey] || planGenerator.nutrition[data.primaryGoal];
 
     if (workoutPlan && nutritionPlan) {
       setPlan({
@@ -96,7 +102,20 @@ export default function App() {
   };
 
   const handleRegeneratePlan = () => {
-    setPlan(null);
+    // Regenerate plans with current profile settings
+    const planKey = `${profile.goal}-${profile.level}`;
+    const workoutPlan = planGenerator.workout[planKey] || planGenerator.workout[`${profile.goal}-beginner`];
+    
+    // Try Indian version first, fallback to regular
+    const nutritionPlanIndian = planGenerator.nutrition[`${profile.goal}-indian`];
+    const nutritionPlan = nutritionPlanIndian || planGenerator.nutrition[profile.goal];
+
+    if (workoutPlan && nutritionPlan) {
+      setPlan({
+        workout: workoutPlan,
+        nutrition: nutritionPlan,
+      });
+    }
   };
 
   return (
@@ -131,7 +150,9 @@ export default function App() {
                     profile={profile}
                     plan={plan}
                     onStartWorkout={() => {
-                      console.log('Start workout');
+                      props.navigation.navigate('WorkoutPlan', {
+                        workout: plan.workout,
+                      });
                     }}
                     onEditProfile={() => {
                       props.navigation.navigate('EditProfile', {
@@ -153,6 +174,7 @@ export default function App() {
                   />
                 )}
               </Stack.Screen>
+              <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen} />
               <Stack.Screen name="NutritionPlan" component={NutritionPlanScreen} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="Settings" component={SettingsScreen} />

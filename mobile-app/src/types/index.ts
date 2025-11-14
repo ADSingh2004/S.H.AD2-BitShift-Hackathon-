@@ -21,6 +21,7 @@ export interface Exercise {
 export interface WorkoutPlan {
   name: string;
   duration: string;
+  level?: string;
   exercises: Exercise[];
 }
 

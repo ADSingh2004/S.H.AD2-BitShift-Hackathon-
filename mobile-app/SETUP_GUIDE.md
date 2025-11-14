@@ -1,4 +1,4 @@
-# FitnessFREAK Mobile App - Complete Setup & Implementation Guide
+# B.R.A.V.O Mobile App - Complete Setup & Implementation Guide
 
 ## 🚀 Quick Start Commands
 

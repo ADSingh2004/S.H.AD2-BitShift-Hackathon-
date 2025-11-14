@@ -151,4 +151,4 @@ Get credentials from: https://app.supabase.com/project/_/settings/api
 
 All errors are fixed! The app is **ready to use**!
 
-**Just scan the QR code and start using your fitnessFREAK app!** 📱✨
+**Just scan the QR code and start using your B.R.A.V.O app!** 📱✨

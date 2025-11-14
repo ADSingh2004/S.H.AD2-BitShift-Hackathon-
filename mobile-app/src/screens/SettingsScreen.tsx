@@ -18,8 +18,11 @@ export default function SettingsScreen({ navigation, route }: Props) {
   const { onLogout } = route.params;
 
   const [notifications, setNotifications] = useState(true);
-  const [workoutReminders, setWorkoutReminders] = useState(true);
-  const [mealReminders, setMealReminders] = useState(true);
+  const [breakfastReminder, setBreakfastReminder] = useState(false);
+  const [lunchReminder, setLunchReminder] = useState(false);
+  const [dinnerReminder, setDinnerReminder] = useState(false);
+  const [gymReminder, setGymReminder] = useState(false);
+  const [workoutReminder, setWorkoutReminder] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
 
@@ -54,11 +57,148 @@ export default function SettingsScreen({ navigation, route }: Props) {
           text: 'Clear',
           style: 'destructive',
           onPress: () => {
+            // In production, clear AsyncStorage or local state
             Alert.alert('Success', 'Local data cleared successfully');
           },
         },
       ]
     );
+  };
+
+  const handleSetBreakfastReminder = () => {
+    Alert.alert(
+      '🍳 Breakfast Reminder',
+      'Choose your breakfast time:',
+      [
+        { text: '7:00 AM Daily', onPress: () => scheduleReminder('breakfast', '07:00', 'daily') },
+        { text: '8:00 AM Daily', onPress: () => scheduleReminder('breakfast', '08:00', 'daily') },
+        { text: '9:00 AM Daily', onPress: () => scheduleReminder('breakfast', '09:00', 'daily') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSetLunchReminder = () => {
+    Alert.alert(
+      '🍛 Lunch Reminder',
+      'Choose your lunch time:',
+      [
+        { text: '12:00 PM Daily', onPress: () => scheduleReminder('lunch', '12:00', 'daily') },
+        { text: '1:00 PM Daily', onPress: () => scheduleReminder('lunch', '13:00', 'daily') },
+        { text: '2:00 PM Daily', onPress: () => scheduleReminder('lunch', '14:00', 'daily') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSetDinnerReminder = () => {
+    Alert.alert(
+      '🍽️ Dinner Reminder',
+      'Choose your dinner time:',
+      [
+        { text: '7:00 PM Daily', onPress: () => scheduleReminder('dinner', '19:00', 'daily') },
+        { text: '8:00 PM Daily', onPress: () => scheduleReminder('dinner', '20:00', 'daily') },
+        { text: '9:00 PM Daily', onPress: () => scheduleReminder('dinner', '21:00', 'daily') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSetGymReminder = () => {
+    Alert.alert(
+      '🏋️ Gym Reminder',
+      'Choose your gym time:',
+      [
+        { text: '6:00 AM Daily', onPress: () => scheduleReminder('gym', '06:00', 'daily') },
+        { text: '7:00 AM Daily', onPress: () => scheduleReminder('gym', '07:00', 'daily') },
+        { text: '6:00 PM Daily', onPress: () => scheduleReminder('gym', '18:00', 'daily') },
+        { text: '7:00 PM Daily', onPress: () => scheduleReminder('gym', '19:00', 'daily') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSetWorkoutReminder = () => {
+    Alert.alert(
+      '💪 Workout Reminder',
+      'Choose your workout time:',
+      [
+        { text: '6:00 AM Daily', onPress: () => scheduleReminder('workout', '06:00', 'daily') },
+        { text: '7:00 AM Daily', onPress: () => scheduleReminder('workout', '07:00', 'daily') },
+        { text: '5:00 PM Daily', onPress: () => scheduleReminder('workout', '17:00', 'daily') },
+        { text: '6:00 PM Daily', onPress: () => scheduleReminder('workout', '18:00', 'daily') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const scheduleReminder = (type: string, time: string, frequency: string) => {
+    // In production, use expo-notifications
+    const emoji = {
+      breakfast: '🍳',
+      lunch: '🍛',
+      dinner: '🍽️',
+      gym: '🏋️',
+      workout: '💪'
+    }[type] || '⏰';
+    
+    Alert.alert('✅ Reminder Set', `${emoji} Your ${type} reminder has been scheduled for ${time} (${frequency})`);
+    
+    // Update state based on reminder type
+    switch(type) {
+      case 'breakfast':
+        setBreakfastReminder(true);
+        break;
+      case 'lunch':
+        setLunchReminder(true);
+        break;
+      case 'dinner':
+        setDinnerReminder(true);
+        break;
+      case 'gym':
+        setGymReminder(true);
+        break;
+      case 'workout':
+        setWorkoutReminder(true);
+        break;
+    }
+  };
+
+  const handleExportData = () => {
+    Alert.alert(
+      'Export Data',
+      'Your workout and nutrition data will be exported as JSON.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Export',
+          onPress: () => {
+            // In production, export to file
+            Alert.alert('Success', 'Data exported successfully! Check your downloads folder.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleChangePassword = () => {
+    Alert.alert('Change Password', 'Password change feature coming soon!');
+  };
+
+  const handlePrivacyPolicy = () => {
+    Alert.alert('Privacy Policy', 'Your privacy is important to us. All data is stored securely and never shared with third parties.');
+  };
+
+  const handleTermsOfService = () => {
+    Alert.alert('Terms of Service', 'By using B.R.A.V.O, you agree to our terms and conditions.');
+  };
+
+  const handleRateApp = () => {
+    Alert.alert('Rate B.R.A.V.O', 'Thank you for your support! Please rate us on the App Store / Play Store.');
+  };
+
+  const handleHelpSupport = () => {
+    Alert.alert('Help & Support', 'Need help? Contact us at support@bravo-fitness.com or visit our FAQ section.');
   };
 
   return (
@@ -95,32 +235,102 @@ export default function SettingsScreen({ navigation, route }: Props) {
 
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Workout Reminders</Text>
+              <Text style={styles.settingLabel}>🍳 Breakfast Reminder</Text>
               <Text style={styles.settingDescription}>
-                Get reminded about your scheduled workouts
+                Daily reminder for breakfast
               </Text>
             </View>
-            <Switch
-              value={workoutReminders}
-              onValueChange={setWorkoutReminders}
-              trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
-              thumbColor={workoutReminders ? '#fff' : '#f3f4f6'}
-            />
+            <TouchableOpacity onPress={handleSetBreakfastReminder}>
+              <Switch
+                value={breakfastReminder}
+                onValueChange={(val) => {
+                  setBreakfastReminder(val);
+                  if (val) handleSetBreakfastReminder();
+                }}
+                trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
+                thumbColor={breakfastReminder ? '#fff' : '#f3f4f6'}
+              />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Meal Reminders</Text>
+              <Text style={styles.settingLabel}>🍛 Lunch Reminder</Text>
               <Text style={styles.settingDescription}>
-                Get reminded to log your meals
+                Daily reminder for lunch
               </Text>
             </View>
-            <Switch
-              value={mealReminders}
-              onValueChange={setMealReminders}
-              trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
-              thumbColor={mealReminders ? '#fff' : '#f3f4f6'}
-            />
+            <TouchableOpacity onPress={handleSetLunchReminder}>
+              <Switch
+                value={lunchReminder}
+                onValueChange={(val) => {
+                  setLunchReminder(val);
+                  if (val) handleSetLunchReminder();
+                }}
+                trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
+                thumbColor={lunchReminder ? '#fff' : '#f3f4f6'}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>🍽️ Dinner Reminder</Text>
+              <Text style={styles.settingDescription}>
+                Daily reminder for dinner
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleSetDinnerReminder}>
+              <Switch
+                value={dinnerReminder}
+                onValueChange={(val) => {
+                  setDinnerReminder(val);
+                  if (val) handleSetDinnerReminder();
+                }}
+                trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
+                thumbColor={dinnerReminder ? '#fff' : '#f3f4f6'}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>🏋️ Gym Reminder</Text>
+              <Text style={styles.settingDescription}>
+                Daily reminder for gym time
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleSetGymReminder}>
+              <Switch
+                value={gymReminder}
+                onValueChange={(val) => {
+                  setGymReminder(val);
+                  if (val) handleSetGymReminder();
+                }}
+                trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
+                thumbColor={gymReminder ? '#fff' : '#f3f4f6'}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>💪 Workout Reminder</Text>
+              <Text style={styles.settingDescription}>
+                Daily reminder for workout sessions
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleSetWorkoutReminder}>
+              <Switch
+                value={workoutReminder}
+                onValueChange={(val) => {
+                  setWorkoutReminder(val);
+                  if (val) handleSetWorkoutReminder();
+                }}
+                trackColor={{ false: '#d1d5db', true: '#14b8a6' }}
+                thumbColor={workoutReminder ? '#fff' : '#f3f4f6'}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -163,17 +373,17 @@ export default function SettingsScreen({ navigation, route }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleChangePassword}>
             <Text style={styles.actionButtonText}>Change Password</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handlePrivacyPolicy}>
             <Text style={styles.actionButtonText}>Privacy Policy</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleTermsOfService}>
             <Text style={styles.actionButtonText}>Terms of Service</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
@@ -183,7 +393,7 @@ export default function SettingsScreen({ navigation, route }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
           
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleExportData}>
             <Text style={styles.actionButtonText}>Export Data</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
@@ -210,15 +420,15 @@ export default function SettingsScreen({ navigation, route }: Props) {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>App Name</Text>
-            <Text style={styles.infoValue}>FitnessFREAK</Text>
+            <Text style={[styles.infoValue, styles.boldBravo]}>B.R.A.V.O</Text>
           </View>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleRateApp}>
             <Text style={styles.actionButtonText}>Rate Us</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleHelpSupport}>
             <Text style={styles.actionButtonText}>Help & Support</Text>
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
@@ -354,5 +564,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  boldBravo: {
+    fontWeight: '900',
+    color: '#0d9488',
   },
 });

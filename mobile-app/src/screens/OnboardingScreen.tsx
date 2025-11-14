@@ -13,7 +13,7 @@ import { OnboardingData } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface OnboardingScreenProps {
-  onComplete: (data: OnboardingData) => void;
+  onComplete?: (data: OnboardingData) => void;
   userEmail?: string;
 }
 
@@ -99,8 +99,8 @@ export default function OnboardingScreen({ onComplete, userEmail }: OnboardingSc
         console.log('Demo mode: Data would be saved to database');
       }
 
-      // Call parent completion handler
-      onComplete(formData);
+      // Call parent completion handler (if provided)
+      onComplete?.(formData);
     } catch (err: any) {
       console.error('Error saving onboarding data:', err);
       Alert.alert('Error', 'Failed to save your information. Please try again.');
@@ -117,7 +117,7 @@ export default function OnboardingScreen({ onComplete, userEmail }: OnboardingSc
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>✨</Text>
           </View>
-          <Text style={styles.title}>Welcome to fitnessFreak</Text>
+          <Text style={styles.title}>Welcome to <Text style={styles.boldBravo}>B.R.A.V.O</Text></Text>
           <Text style={styles.subtitle}>
             Your AI-powered fitness companion. Let's create your personalized plan!
           </Text>
@@ -404,6 +404,11 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 8,
     textAlign: 'center',
+  },
+  boldBravo: {
+    fontWeight: '900',
+    fontSize: 30,
+    color: '#0d9488',
   },
   subtitle: {
     fontSize: 14,
